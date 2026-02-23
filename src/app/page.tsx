@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DiningMenu, MenuItem, Filters } from '@/types/menu';
 import FoodLog from './FoodLog';
 import QRScanner from './QRScanner';
@@ -127,8 +127,29 @@ function ItemBadges({ item }: { item: MenuItem }) {
   );
 }
 
+const TAB_ORDER: ActiveTab[] = ['menu', 'log', 'scanner'];
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('menu');
+
+  // Swipe left/right to change tabs
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Require at least 60px horizontal, and horizontal must dominate vertical
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    const idx = TAB_ORDER.indexOf(activeTab);
+    if (dx < 0 && idx < TAB_ORDER.length - 1) setActiveTab(TAB_ORDER[idx + 1]);
+    if (dx > 0 && idx > 0) setActiveTab(TAB_ORDER[idx - 1]);
+  }
 
   const [filters, setFilters] = useState<Filters>({
     avoidMeat: true,
@@ -205,9 +226,15 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm">
+    <div
+      className="min-h-screen bg-zinc-950 text-zinc-100 font-sans"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Header — padding-top pushes content below iPhone notch/Dynamic Island */}
+      <header className="sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="max-w-5xl mx-auto px-4 pt-4 pb-0">
           <div className="flex items-center gap-3 pb-3">
             <div className="w-9 h-9 flex items-center justify-center rounded-full bg-amber-900/50 border border-amber-700/50 text-amber-300 text-lg font-bold">
