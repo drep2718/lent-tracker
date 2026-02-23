@@ -11,7 +11,7 @@ const LOCATIONS = [
   { id: 'Hillenbrand', label: 'Hillenbrand' },
   { id: 'Earhart', label: 'Earhart' },
   { id: 'Windsor', label: 'Windsor' },
-  { id: 'BOWL', label: '1Bowl' },
+  { id: '1bowl at Meredith Hall', label: '1Bowl' },
 ];
 
 type ActiveTab = 'menu' | 'log' | 'scanner';
