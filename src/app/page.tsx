@@ -27,10 +27,14 @@ function hasTag(item: MenuItem, name: string): boolean {
 
 function passesFilters(item: MenuItem, filters: Filters): boolean {
   if (filters.avoidMeat) {
-    // Must be tagged Vegetarian (excludes meat + poultry), and no fish/shellfish
-    if (!hasTag(item, 'Vegetarian')) return false;
-    if (hasTag(item, 'Fish')) return false;
-    if (hasTag(item, 'Shellfish')) return false;
+    // Orthodox fast: shellfish (shrimp, crab, lobster, etc.) IS allowed.
+    // Backbone fish (salmon, tuna, cod, etc.) is NOT allowed.
+    // So: pass if Vegetarian OR shellfish-only. Exclude backbone fish regardless.
+    const isVegetarian = hasTag(item, 'Vegetarian');
+    const hasShellfish = hasTag(item, 'Shellfish');
+    const hasFish = hasTag(item, 'Fish');
+    if (!isVegetarian && !hasShellfish) return false; // has meat or poultry
+    if (hasFish) return false; // backbone fish not permitted
   }
   if (filters.avoidDairy && hasTag(item, 'Milk')) return false;
   if (filters.avoidEggs && hasTag(item, 'Eggs')) return false;
@@ -107,8 +111,8 @@ function ItemBadges({ item }: { item: MenuItem }) {
   else if (hasTag(item, 'Vegetarian')) badges.push({ label: 'Vegetarian', cls: 'bg-lime-900/60 text-lime-300 border-lime-700' });
   if (hasTag(item, 'Milk')) badges.push({ label: 'Dairy', cls: 'bg-yellow-900/60 text-yellow-300 border-yellow-700' });
   if (hasTag(item, 'Eggs')) badges.push({ label: 'Eggs', cls: 'bg-orange-900/60 text-orange-300 border-orange-700' });
-  if (hasTag(item, 'Fish') || hasTag(item, 'Shellfish'))
-    badges.push({ label: 'Seafood', cls: 'bg-blue-900/60 text-blue-300 border-blue-700' });
+  if (hasTag(item, 'Fish')) badges.push({ label: 'Fish', cls: 'bg-blue-900/60 text-blue-300 border-blue-700' });
+  if (hasTag(item, 'Shellfish')) badges.push({ label: 'Shellfish ✓', cls: 'bg-cyan-900/60 text-cyan-300 border-cyan-700' });
 
   return (
     <div className="flex flex-wrap gap-1 mt-1.5">
@@ -186,7 +190,7 @@ export default function Home() {
   }
 
   const activeFilterLabels = [
-    filters.avoidMeat && 'no meat or seafood',
+    filters.avoidMeat && 'no meat or fish (shellfish ok)',
     filters.avoidDairy && 'no dairy',
     filters.avoidEggs && 'no eggs',
     filters.avoidOil && 'no oil (vegan only)',
@@ -251,8 +255,8 @@ export default function Home() {
                   id="meat"
                   checked={filters.avoidMeat}
                   onChange={setFilter('avoidMeat')}
-                  label="🥩 Meat & Seafood"
-                  description="Hides non-vegetarian items plus fish and shellfish"
+                  label="🥩 Meat & Fish"
+                  description="Hides meat, poultry, and backbone fish — shellfish is permitted per the Orthodox fast"
                   activeClass="border-red-700/60 bg-red-950/30"
                   switchColor="bg-red-600"
                 />
