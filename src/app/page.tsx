@@ -5,6 +5,7 @@ import type { DiningMenu, MenuItem, Filters } from '@/types/menu';
 import FoodLog from './FoodLog';
 import QRScanner from './QRScanner';
 import LentenBanner from './LentenBanner';
+import DailyReadings from './DailyReadings';
 
 const LOCATIONS = [
   { id: 'Wiley', label: 'Wiley' },
@@ -248,6 +249,9 @@ export default function Home() {
           <>
             {/* Lenten Day Banner */}
             <LentenBanner />
+
+            {/* Daily Readings & Saints */}
+            <DailyReadings />
 
             {/* Fasting Toggles */}
             <section>
