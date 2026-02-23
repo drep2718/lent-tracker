@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { DiningMenu, MenuItem, Filters } from '@/types/menu';
 import FoodLog from './FoodLog';
 import QRScanner from './QRScanner';
+import LentenBanner from './LentenBanner';
 
 const LOCATIONS = [
   { id: 'Wiley', label: 'Wiley' },
@@ -245,6 +246,9 @@ export default function Home() {
         {/* ── MENU TAB ── */}
         {activeTab === 'menu' && (
           <>
+            {/* Lenten Day Banner */}
+            <LentenBanner />
+
             {/* Fasting Toggles */}
             <section>
               <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
