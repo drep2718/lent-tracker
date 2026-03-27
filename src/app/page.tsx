@@ -140,6 +140,13 @@ interface NuggetDay {
   results: NuggetResult[];
 }
 
+function isVegNugget(name: string): boolean {
+  const n = name.toLowerCase();
+  const hasVeg = /\bveg(an|etarian|gie|g)?\b/.test(n);
+  const hasNuggetOrChick = /nugget|chik|chick/.test(n);
+  return hasVeg && hasNuggetOrChick;
+}
+
 function useVegNuggets() {
   const [days, setDays] = useState<NuggetDay[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -168,10 +175,7 @@ function useVegNuggets() {
                 for (const meal of data.Meals ?? []) {
                   for (const station of meal.Stations ?? []) {
                     for (const item of station.Items ?? []) {
-                      if (
-                        item.Name.toLowerCase().includes('nugget') &&
-                        hasTag(item, 'Vegetarian')
-                      ) {
+                      if (isVegNugget(item.Name)) {
                         meals.push({ meal: meal.Name, itemName: item.Name });
                       }
                     }
