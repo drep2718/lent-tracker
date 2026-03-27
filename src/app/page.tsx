@@ -129,6 +129,124 @@ function ItemBadges({ item }: { item: MenuItem }) {
 
 const TAB_ORDER: ActiveTab[] = ['menu', 'log', 'scanner'];
 
+interface NuggetResult {
+  location: string;
+  meals: { meal: string; itemName: string }[];
+}
+
+interface NuggetDay {
+  dateStr: string;
+  label: string;
+  results: NuggetResult[];
+}
+
+function useVegNuggets() {
+  const [days, setDays] = useState<NuggetDay[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function search() {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const targets = [
+        { date: today, label: 'Today' },
+        { date: tomorrow, label: 'Tomorrow' },
+      ];
+
+      const results = await Promise.all(
+        targets.map(async ({ date, label }) => {
+          const dateStr = formatDate(date);
+          const locResults = await Promise.allSettled(
+            LOCATIONS.map(async (loc) => {
+              try {
+                const res = await fetch(`/api/menus/${encodeURIComponent(loc.id)}?date=${dateStr}`);
+                if (!res.ok) return null;
+                const data: DiningMenu = await res.json();
+                const meals: { meal: string; itemName: string }[] = [];
+                for (const meal of data.Meals ?? []) {
+                  for (const station of meal.Stations ?? []) {
+                    for (const item of station.Items ?? []) {
+                      if (
+                        item.Name.toLowerCase().includes('nugget') &&
+                        hasTag(item, 'Vegetarian')
+                      ) {
+                        meals.push({ meal: meal.Name, itemName: item.Name });
+                      }
+                    }
+                  }
+                }
+                return meals.length > 0 ? { location: loc.label, meals } : null;
+              } catch {
+                return null;
+              }
+            })
+          );
+          const found: NuggetResult[] = locResults
+            .filter(
+              (r): r is PromiseFulfilledResult<NuggetResult> =>
+                r.status === 'fulfilled' && r.value !== null
+            )
+            .map((r) => r.value);
+          return { dateStr, label, results: found };
+        })
+      );
+
+      setDays(results);
+      setLoading(false);
+    }
+    search();
+  }, []);
+
+  return { days, loading };
+}
+
+function VegNuggetBanner() {
+  const { days, loading } = useVegNuggets();
+
+  if (loading) {
+    return (
+      <div className="bg-lime-950/20 border border-lime-800/30 rounded-xl px-4 py-3 flex items-center gap-2 text-xs text-lime-500">
+        <div className="w-3 h-3 border border-lime-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        Checking for vegetarian nuggets…
+      </div>
+    );
+  }
+
+  if (!days) return null;
+
+  const anyFound = days.some((d) => d.results.length > 0);
+
+  return (
+    <div className={`rounded-xl border px-4 py-3 space-y-2 ${anyFound ? 'bg-lime-950/20 border-lime-700/40' : 'bg-zinc-900/40 border-zinc-800'}`}>
+      <div className="flex items-center gap-2">
+        <span className="text-base">🌿</span>
+        <span className={`text-xs font-bold uppercase tracking-widest ${anyFound ? 'text-lime-300' : 'text-zinc-500'}`}>
+          Vegetarian Chicken Nuggets
+        </span>
+      </div>
+      {days.map((day) => (
+        <div key={day.label} className="text-xs">
+          <span className="font-semibold text-zinc-300">{day.label}: </span>
+          {day.results.length === 0 ? (
+            <span className="text-zinc-500">Not available at any dining court</span>
+          ) : (
+            <span className="text-lime-300">
+              {day.results
+                .map((r) => {
+                  const mealNames = [...new Set(r.meals.map((m) => m.meal))].join(', ');
+                  return `${r.location} (${mealNames})`;
+                })
+                .join(' · ')}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('menu');
 
@@ -335,6 +453,9 @@ export default function Home() {
                 </div>
               )}
             </section>
+
+            {/* Veg Nugget Tracker */}
+            <VegNuggetBanner />
 
             {/* Date + Location */}
             <section className="flex flex-col sm:flex-row gap-4 items-start">
