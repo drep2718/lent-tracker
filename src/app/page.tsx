@@ -147,19 +147,26 @@ function isVegNugget(name: string): boolean {
   return hasVeg && hasNuggetOrChick;
 }
 
-function useVegNuggets() {
+function useVegNuggets(baseDate: Date) {
   const [days, setDays] = useState<NuggetDay[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setDays(null);
+    setLoading(true);
     async function search() {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const actualToday = new Date();
+      const isToday =
+        baseDate.getFullYear() === actualToday.getFullYear() &&
+        baseDate.getMonth() === actualToday.getMonth() &&
+        baseDate.getDate() === actualToday.getDate();
+
+      const next = new Date(baseDate);
+      next.setDate(next.getDate() + 1);
 
       const targets = [
-        { date: today, label: 'Today' },
-        { date: tomorrow, label: 'Tomorrow' },
+        { date: baseDate, label: isToday ? 'Today' : formatDate(baseDate) },
+        { date: next, label: isToday ? 'Tomorrow' : formatDate(next) },
       ];
 
       const results = await Promise.all(
@@ -201,13 +208,13 @@ function useVegNuggets() {
       setLoading(false);
     }
     search();
-  }, []);
+  }, [baseDate]);
 
   return { days, loading };
 }
 
-function VegNuggetBanner() {
-  const { days, loading } = useVegNuggets();
+function VegNuggetBanner({ selectedDate }: { selectedDate: Date }) {
+  const { days, loading } = useVegNuggets(selectedDate);
 
   if (loading) {
     return (
@@ -459,7 +466,7 @@ export default function Home() {
             </section>
 
             {/* Veg Nugget Tracker */}
-            <VegNuggetBanner />
+            <VegNuggetBanner selectedDate={selectedDate} />
 
             {/* Date + Location */}
             <section className="flex flex-col sm:flex-row gap-4 items-start">
